@@ -5,4 +5,19 @@
 #ifndef XUNARC_COMMON_H
 #define XUNARC_COMMON_H
 
+#include <exec/types.h>
+#include <inline/dos.h>
+struct DosLibrary *	 DOSBase;
+struct xadMasterBase *	xadMasterBase;
+
+struct Config {
+    STRPTR src;
+    STRPTR dst;
+    BPTR output;
+    short outputClosable;
+    //no absolute paths - may be usefull in the future - by default disabled
+    ULONG noabs;
+};
+
+void Log(char * str);
 #endif //XUNARC_COMMON_H
