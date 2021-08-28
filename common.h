@@ -13,6 +13,7 @@ struct xadMasterBase *	xadMasterBase;
 struct Config {
     STRPTR src;
     STRPTR dst;
+    STRPTR pattern;
     BPTR output;
     short outputClosable;
     //no absolute paths - may be usefull in the future - by default disabled

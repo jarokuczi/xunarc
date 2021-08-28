@@ -80,9 +80,10 @@ short init() {
 short cleanUp() {
 #if LOG_ENABLED
     Flush(config->output);
-    Delay(500L);
-    if (config->outputClosable)
-    Close(config->output);
+    if (config->outputClosable) {
+        Delay(500);
+        Close(config->output);
+    }
 #endif
     FreeMem(config, sizeof (struct Config));
     if (DOSBase)
@@ -108,34 +109,38 @@ int main(int argc, char **argv) {
         cleanUp();
         return 10;
     }
+    config->noabs = 0;
+    config->pattern = "#?";
     if (argc) {
         if (!(rda=ReadArgs(TEMPLATE, args, NULL)))
         {
             PrintFault(IoErr(), argv[0]);
             return 10;
         } else {
-            config->output = Output();
-            config->outputClosable = 0;
+              config->output = Output();
+              config->outputClosable = 0;
+//            config->output = Open("CON:0/0/640/200/xUnArc", MODE_NEWFILE);
+//            config->outputClosable = 1;
             config->src = (STRPTR)args[0];
             config->dst = (STRPTR)args[1];
+
         }
     } else {
+        UBYTE filename[512];
         config->output = Open("CON:0/0/640/200/xUnArc", MODE_NEWFILE);
         config->outputClosable = 1;
         struct WBStartup *wbs=(struct WBStartup*)argv;
         struct WBArg *wba=&wbs->sm_ArgList[wbs->sm_NumArgs-1];
         BPTR oldcd;
-
         if (!(*wba->wa_Name)) return 10;
-        config->src = (STRPTR)wba->wa_Name;
+        NameFromLock(wba->wa_Lock, filename, 512);
+        AddPart(filename, (STRPTR)wba->wa_Name, 512);
+        config->src = (STRPTR)filename;
         oldcd=CurrentDir(wba->wa_Lock);
         if ((dob=GetDiskObjectNew(wba->wa_Name))) {
-            if ((config->dst=FindToolType(dob->do_ToolTypes, "DST"))) {
-                //FPrintf(output, "ToolType 1: %s\n",config->dst);
-            } else {
+            if (!(config->dst=FindToolType(dob->do_ToolTypes, "DST"))) {
                 config->dst = "ram:";
             }
-            config->noabs = 0;
         }
         CurrentDir(oldcd);
     }
