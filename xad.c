@@ -58,8 +58,8 @@ ULONG unpack() {
     ULONG ret = RETURN_FAIL, numerr = 0;
 
     LONG err = 0;
-    int totalFiles = 0;
-    int currentFileNumber = 1;
+    ULONG totalFiles = 0;
+    ULONG currentFileNumber = 1;
 
     FPrintf(config->output, "Extracting %s into %s\n", config->src, config->dst);
     Flush(config->output);
@@ -120,12 +120,12 @@ ULONG unpack() {
                     totalFiles++;
                     fi = fi->xfi_Next;
                 }
-                FPrintf(config->output, "Total files in archive: %d\n",  totalFiles);
+                FPrintf(config->output, "Total files in archive: %ld\n",  totalFiles);
                 Flush(config->output);
                 fi = ai->xai_FileInfo;
 
                 while (fi && !(SetSignal(0L, 0L) & SIGBREAKF_CTRL_C) && !xh.finish) {
-                    FPrintf(config->output, "Processing file %s #%d\n",
+                    FPrintf(config->output, "Processing file %s #%ld\n",
                             fi->xfi_FileName, currentFileNumber++);
                     Flush(config->output);
                     if (!config->pattern || CheckName(config->pattern, fi->xfi_FileName)) {
