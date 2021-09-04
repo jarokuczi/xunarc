@@ -83,23 +83,8 @@ ULONG unpack() {
         ULONG numfile = 0, numdir = 0;
         struct xadDeviceInfo *dvi = 0;
         struct xadArchiveInfo *ai;
-        struct TagItem ti[5];
-        struct TagItem ti2[5];
         LONG loop = 2;
-        ti[1].ti_Tag = XAD_NOEXTERN;
-        ti[1].ti_Data = 0;
-        ti[2].ti_Tag = TAG_IGNORE;
-        ti[2].ti_Data = 0;
-        ti[3].ti_Tag = TAG_IGNORE;
-        ti[3].ti_Data = 1;
-        ti[4].ti_Tag = TAG_DONE;
 
-        ti2[1].ti_Tag = XAD_NOEMPTYERROR;
-        ti2[1].ti_Data = TRUE;
-        ti2[2].ti_Tag = XAD_PROGRESSHOOK;
-        ti2[2].ti_Data = (ULONG) &prhook;
-        ti2[3].ti_Tag = TAG_DONE;
-        ti2[4].ti_Tag = TAG_DONE; /* needed later for loop */
 
         if ((ai = (struct xadArchiveInfo *)
                 xadAllocObjectA(XADOBJ_ARCHIVEINFO, 0))) {
@@ -214,18 +199,9 @@ ULONG unpack() {
                     }
                     fi = fi->xfi_Next;
                 }
-                ti2[3].ti_Tag = XAD_STARTCLIENT;
-                ti2[3].ti_Data = (ULONG) ai->xai_Client->xc_Next;
                 xadFreeInfo(ai);
                 if (--loop) {
                     loop = 0;
-                    if (ti2[3].ti_Data) {
-                        xadFreeObjectA(ai, 0); /* realloc ai structure */
-                        if ((ai = (struct xadArchiveInfo *) xadAllocObjectA(XADOBJ_ARCHIVEINFO, 0))) {
-                            if (!xadGetDiskInfoA(ai, ti2))
-                                loop = 2;
-                        }
-                    }
                 }
                 if (!loop && !(SetSignal(0L, 0L) & SIGBREAKF_CTRL_C)) {
                     FPrintf(config->output, "Processed");

@@ -1,9 +1,9 @@
 #define LOG_ENABLED 1
 
 #define PROGRAMNAME     "xunarc"
-#define VERSION         1
-#define REVISION        0
-#define VERSIONSTRING   "1.0"
+#define VERSION         0
+#define REVISION        1
+#define VERSIONSTRING   "0.1"
 
 #define TEMPLATE "SRC/A,DST/A"
 
@@ -96,7 +96,7 @@ short cleanUp() {
 
 
 int main(int argc, char **argv) {
-
+    char filename[512];
     LONG src,dst;
     LONG args[]={ (LONG)&src,
                   (LONG)&dst};
@@ -126,18 +126,19 @@ int main(int argc, char **argv) {
 
         }
     } else {
-        UBYTE filename[512];
         config->output = Open("CON:0/0/640/200/xUnArc", MODE_NEWFILE);
         config->outputClosable = 1;
         struct WBStartup *wbs=(struct WBStartup*)argv;
         struct WBArg *wba=&wbs->sm_ArgList[wbs->sm_NumArgs-1];
         BPTR oldcd;
         if (!(*wba->wa_Name)) return 10;
-        NameFromLock(wba->wa_Lock, filename, 512);
-        AddPart(filename, (STRPTR)wba->wa_Name, 512);
-        config->src = (STRPTR)filename;
+        //NameFromLock(wba->wa_Lock, filename, 512);
         oldcd=CurrentDir(wba->wa_Lock);
         if ((dob=GetDiskObjectNew(wba->wa_Name))) {
+            GetCurrentDirName(filename, 512);
+            AddPart(filename, (STRPTR)wba->wa_Name, 512);
+            Flush(config->output);
+            config->src = filename;
             if (!(config->dst=FindToolType(dob->do_ToolTypes, "DST"))) {
                 config->dst = "ram:";
             }
@@ -146,6 +147,7 @@ int main(int argc, char **argv) {
     }
 
     if (config->output) {
+        FPrintf(config->output, "%s",  VersionTag+6);
         FPrintf(config->output, "SRC: %s\n",  (STRPTR)config->src);
         FPrintf(config->output, "DST: %s\n",  (STRPTR)config->dst);
     }
