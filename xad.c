@@ -31,8 +31,7 @@ int XadInit(struct Config *cnf) {
 
 int XadProcess() {
     ULONG ret = unpack();
-    FPrintf(config->output, "Unpack finished with %d code\n", ret);
-    return 1;
+    return !ret ? 1 : 0;
 }
 
 
@@ -90,7 +89,7 @@ ULONG unpack() {
                 xadAllocObjectA(XADOBJ_ARCHIVEINFO, 0))) {
 
             err = xadGetInfo(ai, XAD_INFILENAME, config->src,
-                             XAD_NOEXTERN, 0, TAG_IGNORE, 0, XAD_PROGRESSHOOK, &prhook, TAG_DONE);
+                             XAD_NOEXTERN, 0, XAD_PROGRESSHOOK, &prhook, TAG_DONE);
             --loop;
             while (!err && loop) {
                 if (ai->xai_Flags & XADAIF_FILECORRUPT)
@@ -110,8 +109,8 @@ ULONG unpack() {
                 fi = ai->xai_FileInfo;
 
                 while (fi && !(SetSignal(0L, 0L) & SIGBREAKF_CTRL_C) && !xh.finish) {
-                    FPrintf(config->output, "Processing file %s #%ld\n",
-                            fi->xfi_FileName, currentFileNumber++);
+                    FPrintf(config->output, "Processing file %s %ld of %ld\n",
+                            fi->xfi_FileName, currentFileNumber++, totalFiles);
                     Flush(config->output);
                     if (!config->pattern || CheckName(config->pattern, fi->xfi_FileName)) {
                         CopyMem(config->dst, filename, strlen(config->dst) + 1);
@@ -134,7 +133,7 @@ ULONG unpack() {
                             }
                         }
                         if (fi->xfi_Flags & XADFIF_LINK) {
-                            Printf("Skipped Link\n");
+                            FPrintf(config->output, "Skipped Link\n");
                         } else if (fi->xfi_Flags & XADFIF_DIRECTORY) {
                             BPTR a;
                             LONG err = 0, i = 0;
@@ -153,7 +152,7 @@ ULONG unpack() {
                                 filename[i++] = r;
                             }
                             if (err) {
-                                Printf("failed to create directory '%s'\n", fi->xfi_FileName);
+                                FPrintf(config->output, "failed to create directory '%s'\n", fi->xfi_FileName);
                                 ++numerr;
                             } else {
                                 FPrintf(config->output, "Created directory   : %s\n", filename);
@@ -215,6 +214,7 @@ ULONG unpack() {
                     if (numerr)
                         FPrintf(config->output, ", %ld error%s", numerr, numerr == 1 ? "" : "s");
                     FPrintf(config->output, ".\n");
+                    Flush(config->output);
                 }
             } /* xadGetInfo, loop */
 
@@ -242,6 +242,7 @@ ULONG progrhook(struct Hook *hook, void *o, struct xadProgressInfo *pi) {
         else
             FPrintf(config->output, "Wrote %8lu of %8lu bytes: %s          \r",
                     pi->xpi_CurrentSize, pi->xpi_FileInfo->xfi_Size, name);
+        Flush(config->output);
         ((struct xHookArgs *) (hook->h_Data))->lastprint = pi->xpi_CurrentSize;
     }
     if (!(SetSignal(0L, 0L) & SIGBREAKF_CTRL_C)) /* clear ok flag */

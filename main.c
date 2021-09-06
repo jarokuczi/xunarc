@@ -15,7 +15,6 @@
 #include <graphics/gfx.h>
 #include <graphics/gfxmacros.h>
 #include <graphics/layers.h>
-#include <intuition/intuition.h>
 #include <intuition/intuitionbase.h>
 #include <workbench/workbench.h>
 #include <workbench/startup.h>
@@ -23,7 +22,6 @@
 #include <datatypes/pictureclass.h>
 #include <libraries/asl.h>
 #include <libraries/commodities.h>
-#include <libraries/gadtools.h>
 #include <libraries/iffparse.h>
 #include <libraries/locale.h>
 #include <rexx/rxslib.h>
@@ -37,11 +35,9 @@
 #include <proto/diskfont.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
-#include <proto/gadtools.h>
 #include <proto/graphics.h>
 #include <proto/icon.h>
 #include <proto/iffparse.h>
-#include <proto/intuition.h>
 #include <proto/layers.h>
 #include <proto/locale.h>
 #include <proto/rexxsyslib.h>
@@ -56,40 +52,59 @@ struct xadMasterBase *	xadMasterBase;
 struct DosLibrary *	 DOSBase;
 struct Library * IconBase;
 struct ExecBase *	 SysBase;
+struct Library *GadToolsBase;
+struct Library *IntuitionBase;
+
 extern struct Config * config;
 
 
 
 const UBYTE VersionTag[] = "$VER: " PROGRAMNAME " " VERSIONSTRING " (" __DATE__ ")\n\0";
 
-short init() {
+short init(int shell) {
     config = AllocMem(sizeof(struct Config), MEMF_ANY);
+    if (shell) {
+        //config->output = Open("CON:0/0/640/200/xUnArc", MODE_NEWFILE);
+        //config->outputClosable = 1;
+        config->output = Output();
+        config->outputClosable = 0;
+    } else {
+        config->output = Open("CON:0/0/640/200/xUnArc", MODE_NEWFILE);
+        config->outputClosable = 1;
+    }
     DOSBase = (struct DosLibrary*) OpenLibrary(DOSNAME, 37);
     IconBase = OpenLibrary(ICONNAME, 37);
-    if (DOSBase == NULL || IconBase == NULL) {
+    IntuitionBase = OpenLibrary("intuition.library", 37);
+    GadToolsBase = OpenLibrary("gadtools.library", 37);
+    if (DOSBase == NULL || IconBase == NULL || IntuitionBase == NULL || GadToolsBase == NULL) {
         return 0;
     }
     if ((xadMasterBase = (struct xadMasterBase *)OpenLibrary("xadmaster.library", 1))==NULL) {
         Log("Can't open xadmaster.library");
         return 0;
     }
+
     XadInit(config);
     return 1;
 }
 
 short cleanUp() {
-#if LOG_ENABLED
     Flush(config->output);
     if (config->outputClosable) {
         Delay(500);
         Close(config->output);
     }
-#endif
     FreeMem(config, sizeof (struct Config));
     if (DOSBase)
     CloseLibrary(DOSBase);
     if (IconBase)
     CloseLibrary(IconBase);
+    if (IntuitionBase) {
+        CloseLibrary(IntuitionBase);
+    }
+    if (GadToolsBase) {
+        CloseLibrary(GadToolsBase);
+    }
     if (xadMasterBase)
     CloseLibrary(xadMasterBase);
 }
@@ -105,7 +120,7 @@ int main(int argc, char **argv) {
     struct RDArgs *rda=NULL;
     struct DiskObject *dob=NULL;
     BPTR out;
-    if (!init()) {
+    if (!init(argc)) {
         cleanUp();
         return 10;
     }
@@ -117,17 +132,11 @@ int main(int argc, char **argv) {
             PrintFault(IoErr(), argv[0]);
             return 10;
         } else {
-              config->output = Output();
-              config->outputClosable = 0;
-//            config->output = Open("CON:0/0/640/200/xUnArc", MODE_NEWFILE);
-//            config->outputClosable = 1;
             config->src = (STRPTR)args[0];
             config->dst = (STRPTR)args[1];
-
         }
     } else {
-        config->output = Open("CON:0/0/640/200/xUnArc", MODE_NEWFILE);
-        config->outputClosable = 1;
+
         struct WBStartup *wbs=(struct WBStartup*)argv;
         struct WBArg *wba=&wbs->sm_ArgList[wbs->sm_NumArgs-1];
         BPTR oldcd;
@@ -151,7 +160,8 @@ int main(int argc, char **argv) {
         FPrintf(config->output, "SRC: %s\n",  (STRPTR)config->src);
         FPrintf(config->output, "DST: %s\n",  (STRPTR)config->dst);
     }
-    XadProcess();
+    //XadProcess();
+    GuiShow();
     if (rda) FreeArgs(rda);
     if (dob) FreeDiskObject(dob);
 cleanUp();
