@@ -120,6 +120,7 @@ short cleanUp() {
 
 
 int main(int argc, char **argv) {
+    uint nogui = 0;
     char filename[512];
     LONG src,dst;
     LONG args[]={ (LONG)&src,
@@ -157,7 +158,11 @@ int main(int argc, char **argv) {
             AddPart(filename, (STRPTR)wba->wa_Name, 512);
             Flush(config->output);
             config->src = filename;
-            if ((FindToolType(dob->do_ToolTypes, "VERBOSE")) && !config->output) {
+            if ((FindToolType(dob->do_ToolTypes, "VERBOSE"))) {
+                openNewCon();
+            }
+            if ((FindToolType(dob->do_ToolTypes, "NOGUI"))) {
+                nogui = 1;
                 openNewCon();
             }
             if (!(config->dst=FindToolType(dob->do_ToolTypes, "DST"))) {
@@ -173,7 +178,7 @@ int main(int argc, char **argv) {
         FPrintf(config->output, "DST: %s\n",  (STRPTR)config->dst);
     }
     //XadProcess();
-    if (argc) {
+    if (argc || nogui) {
         XadProcess();
     } else {
         GuiShow();
