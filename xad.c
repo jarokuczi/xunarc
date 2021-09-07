@@ -60,7 +60,9 @@ ULONG unpack() {
     ULONG totalFiles = 0;
     ULONG currentFileNumber = 1;
 
-    FPrintf(config->output, "Extracting %s into %s\n", config->src, config->dst);
+    if (!config->quiet) {
+        FPrintf(config->output, "Extracting %s into %s\n", config->src, config->dst);
+    }
     Flush(config->output);
     LONG namesize = 0;
     struct Hook prhook;
@@ -92,7 +94,7 @@ ULONG unpack() {
                              XAD_NOEXTERN, 0, XAD_PROGRESSHOOK, &prhook, TAG_DONE);
             --loop;
             while (!err && loop) {
-                if (ai->xai_Flags & XADAIF_FILECORRUPT)
+                if (ai->xai_Flags & XADAIF_FILECORRUPT && !config->quiet)
                     FPrintf(config->output, "!!! The archive file has some corrupt data. !!!\n");
                 struct xadFileInfo *fi;
 
@@ -104,13 +106,17 @@ ULONG unpack() {
                     totalFiles++;
                     fi = fi->xfi_Next;
                 }
-                FPrintf(config->output, "Total files in archive: %ld\n",  totalFiles);
+                if (!config->quiet) {
+                    FPrintf(config->output, "Total files in archive: %ld\n", totalFiles);
+                }
                 Flush(config->output);
                 fi = ai->xai_FileInfo;
 
                 while (fi && !(SetSignal(0L, 0L) & SIGBREAKF_CTRL_C) && !xh.finish) {
-                    FPrintf(config->output, "Processing file %s %ld of %ld\n",
-                            fi->xfi_FileName, currentFileNumber++, totalFiles);
+                    if (!config->quiet) {
+                        FPrintf(config->output, "Processing file %s %ld of %ld\n",
+                                fi->xfi_FileName, currentFileNumber++, totalFiles);
+                    }
                     Flush(config->output);
                     if (!config->pattern || CheckName(config->pattern, fi->xfi_FileName)) {
                         CopyMem(config->dst, filename, strlen(config->dst) + 1);
@@ -132,7 +138,7 @@ ULONG unpack() {
                                 *fname = 0;
                             }
                         }
-                        if (fi->xfi_Flags & XADFIF_LINK) {
+                        if (fi->xfi_Flags & XADFIF_LINK && !config->quiet) {
                             FPrintf(config->output, "Skipped Link\n");
                         } else if (fi->xfi_Flags & XADFIF_DIRECTORY) {
                             BPTR a;
@@ -152,10 +158,14 @@ ULONG unpack() {
                                 filename[i++] = r;
                             }
                             if (err) {
-                                FPrintf(config->output, "failed to create directory '%s'\n", fi->xfi_FileName);
+                                if (!config->quiet) {
+                                    FPrintf(config->output, "failed to create directory '%s'\n", fi->xfi_FileName);
+                                }
                                 ++numerr;
                             } else {
-                                FPrintf(config->output, "Created directory   : %s\n", filename);
+                                if (!config->quiet) {
+                                    FPrintf(config->output, "Created directory   : %s\n", filename);
+                                }
                                 Flush(config->output);
                             }
                             if (!err) {
@@ -202,7 +212,7 @@ ULONG unpack() {
                 if (--loop) {
                     loop = 0;
                 }
-                if (!loop && !(SetSignal(0L, 0L) & SIGBREAKF_CTRL_C)) {
+                if (!loop && !(SetSignal(0L, 0L) & SIGBREAKF_CTRL_C) && !config->quiet) {
                     FPrintf(config->output, "Processed");
                     if (numfile)
                         FPrintf(config->output, " %ld file%s%s", numfile, numfile == 1 ? "" : "s",
@@ -237,9 +247,9 @@ ULONG progrhook(struct Hook *hook, void *o, struct xadProgressInfo *pi) {
     ULONG ret = 0;
     STRPTR name = ((struct xHookArgs *) (hook->h_Data))->name;
     if (pi->xpi_Mode == XADPMODE_PROGRESS) {
-        if (pi->xpi_FileInfo->xfi_Flags & XADFIF_NOUNCRUNCHSIZE)
+        if (pi->xpi_FileInfo->xfi_Flags & XADFIF_NOUNCRUNCHSIZE && !config->quiet)
             FPrintf(config->output, "Wrote %8lu bytes: %s          \r", pi->xpi_CurrentSize, name);
-        else
+        else if (!config->quiet)
             FPrintf(config->output, "Wrote %8lu of %8lu bytes: %s          \r",
                     pi->xpi_CurrentSize, pi->xpi_FileInfo->xfi_Size, name);
         Flush(config->output);
@@ -257,7 +267,7 @@ LONG CheckNameSize(STRPTR name, ULONG size) {
 
     if ((r = strlen(name)) > size) {
         UBYTE buf[NAMEBUFSIZE];
-
+        if (!config->quiet)
         FPrintf(config->output,
                 "\r\033[KFilename '%s' exceeds name limit of %ld by %ld, rename? (Y|\033[1mN\033[0m|Q): ", name, size,
                 r - size);

@@ -1,5 +1,3 @@
-#define LOG_ENABLED 1
-
 #define PROGRAMNAME     "xunarc"
 #define VERSION         0
 #define REVISION        1
@@ -58,19 +56,18 @@ struct Library *IntuitionBase;
 extern struct Config * config;
 
 
+void openNewCon();
 
 const UBYTE VersionTag[] = "$VER: " PROGRAMNAME " " VERSIONSTRING " (" __DATE__ ")\n\0";
 
 short init(int shell) {
     config = AllocMem(sizeof(struct Config), MEMF_ANY);
+    config->output = NULL;
+    config->quiet = 1;
     if (shell) {
-        //config->output = Open("CON:0/0/640/200/xUnArc", MODE_NEWFILE);
-        //config->outputClosable = 1;
         config->output = Output();
         config->outputClosable = 0;
-    } else {
-        config->output = Open("CON:0/0/640/200/xUnArc", MODE_NEWFILE);
-        config->outputClosable = 1;
+        config->quiet = 0;
     }
     DOSBase = (struct DosLibrary*) OpenLibrary(DOSNAME, 37);
     IconBase = OpenLibrary(ICONNAME, 37);
@@ -80,12 +77,21 @@ short init(int shell) {
         return 0;
     }
     if ((xadMasterBase = (struct xadMasterBase *)OpenLibrary("xadmaster.library", 1))==NULL) {
-        Log("Can't open xadmaster.library");
+        openNewCon();
+        FPrintf(config->output, "Can't open xadmaster.library");
         return 0;
     }
 
     XadInit(config);
     return 1;
+}
+
+void openNewCon() {
+    if (!config->output) {
+        config->output = Open("CON:0/0/640/200/xUnArc", MODE_NEWFILE);
+        config->outputClosable = 1;
+        config->quiet = 0;
+    }
 }
 
 short cleanUp() {
@@ -95,18 +101,21 @@ short cleanUp() {
         Close(config->output);
     }
     FreeMem(config, sizeof (struct Config));
-    if (DOSBase)
-    CloseLibrary(DOSBase);
-    if (IconBase)
-    CloseLibrary(IconBase);
+    if (DOSBase) {
+        CloseLibrary(DOSBase);
+    }
+    if (IconBase) {
+        CloseLibrary(IconBase);
+    }
     if (IntuitionBase) {
         CloseLibrary(IntuitionBase);
     }
     if (GadToolsBase) {
         CloseLibrary(GadToolsBase);
     }
-    if (xadMasterBase)
-    CloseLibrary(xadMasterBase);
+    if (xadMasterBase) {
+        CloseLibrary(xadMasterBase);
+    }
 }
 
 
@@ -148,6 +157,9 @@ int main(int argc, char **argv) {
             AddPart(filename, (STRPTR)wba->wa_Name, 512);
             Flush(config->output);
             config->src = filename;
+            if ((FindToolType(dob->do_ToolTypes, "VERBOSE")) && !config->output) {
+                openNewCon();
+            }
             if (!(config->dst=FindToolType(dob->do_ToolTypes, "DST"))) {
                 config->dst = "ram:";
             }
@@ -155,13 +167,17 @@ int main(int argc, char **argv) {
         CurrentDir(oldcd);
     }
 
-    if (config->output) {
+    if (config->output && !config->quiet) {
         FPrintf(config->output, "%s",  VersionTag+6);
         FPrintf(config->output, "SRC: %s\n",  (STRPTR)config->src);
         FPrintf(config->output, "DST: %s\n",  (STRPTR)config->dst);
     }
     //XadProcess();
-    GuiShow();
+    if (argc) {
+        XadProcess();
+    } else {
+        GuiShow();
+    }
     if (rda) FreeArgs(rda);
     if (dob) FreeDiskObject(dob);
 cleanUp();

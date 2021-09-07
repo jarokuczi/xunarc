@@ -7,6 +7,8 @@
 
 #include <exec/types.h>
 #include <inline/dos.h>
+#include <sys/types.h>
+
 struct DosLibrary *	 DOSBase;
 struct xadMasterBase *	xadMasterBase;
 
@@ -18,6 +20,7 @@ struct Config {
     short outputClosable;
     //no absolute paths - may be usefull in the future - by default disabled
     ULONG noabs;
+    uint quiet;
 };
 
 void Log(char * str);
