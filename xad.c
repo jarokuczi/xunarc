@@ -91,7 +91,8 @@ ULONG unpack() {
                 xadAllocObjectA(XADOBJ_ARCHIVEINFO, 0))) {
 
             err = xadGetInfo(ai, XAD_INFILENAME, config->src,
-                             XAD_NOEXTERN, 0, XAD_PROGRESSHOOK, &prhook, TAG_DONE);
+                             XAD_NOEXTERN, 0, TAG_IGNORE, &prhook, TAG_DONE);
+//                             XAD_NOEXTERN, 0, XAD_PROGRESSHOOK, &prhook, TAG_DONE);
             --loop;
             while (!err && loop) {
                 if (ai->xai_Flags & XADAIF_FILECORRUPT && !config->quiet)
@@ -191,7 +192,8 @@ ULONG unpack() {
                                 e = xadFileUnArc(ai, XAD_OUTFILENAME, filename,
                                                  XAD_ENTRYNUMBER, fi->xfi_EntryNumber, XAD_MAKEDIRECTORY,
                                                  1, XAD_OVERWRITE, 1,
-                                                 XAD_NOKILLPARTIAL, 0, XAD_PROGRESSHOOK, &prhook, TAG_DONE);
+                                                 XAD_NOKILLPARTIAL, 0, TAG_IGNORE, &prhook, TAG_DONE);
+//                                                 XAD_NOKILLPARTIAL, 0, XAD_PROGRESSHOOK, &prhook, TAG_DONE);
                                 xh.extractmode = 0;
 
                                 if (!e) {

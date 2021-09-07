@@ -181,6 +181,7 @@ int main(int argc, char **argv) {
     if (argc || nogui) {
         XadProcess();
     } else {
+        GuiInit();
         GuiShow();
     }
     if (rda) FreeArgs(rda);

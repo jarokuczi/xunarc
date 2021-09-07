@@ -18,9 +18,10 @@ struct Config {
     STRPTR pattern;
     BPTR output;
     short outputClosable;
-    //no absolute paths - may be usefull in the future - by default disabled
+    //no absolute paths - may be useful in the future - by default disabled
     ULONG noabs;
     uint quiet;
+    uint progress;
 };
 
 void Log(char * str);
