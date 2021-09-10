@@ -82,6 +82,9 @@ short init(int shell) {
         return 0;
     }
 
+    if (!shell) {
+        GuiInit();
+    }
     XadInit(config);
     return 1;
 }
@@ -130,10 +133,12 @@ int main(int argc, char **argv) {
     struct RDArgs *rda=NULL;
     struct DiskObject *dob=NULL;
     BPTR out;
+
     if (!init(argc)) {
         cleanUp();
         return 10;
     }
+
     config->noabs = 0;
     config->pattern = "#?";
     if (argc) {
@@ -146,7 +151,6 @@ int main(int argc, char **argv) {
             config->dst = (STRPTR)args[1];
         }
     } else {
-
         struct WBStartup *wbs=(struct WBStartup*)argv;
         struct WBArg *wba=&wbs->sm_ArgList[wbs->sm_NumArgs-1];
         BPTR oldcd;
@@ -177,15 +181,12 @@ int main(int argc, char **argv) {
         FPrintf(config->output, "SRC: %s\n",  (STRPTR)config->src);
         FPrintf(config->output, "DST: %s\n",  (STRPTR)config->dst);
     }
-    //XadProcess();
     if (argc || nogui) {
         XadProcess();
     } else {
-        GuiInit();
         GuiShow();
     }
     if (rda) FreeArgs(rda);
     if (dob) FreeDiskObject(dob);
-cleanUp();
-//printf("podano opcje: SPACE=%d, PICTURE=%s, STATIC=%d, SIZE=%d\n", Odstep, nazwa_podkladu, Statik, SkalaIkon);
+    cleanUp();
 }
