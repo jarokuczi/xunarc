@@ -113,7 +113,7 @@ ULONG unpack() {
                 Flush(config->output);
                 fi = ai->xai_FileInfo;
 
-                while (fi && !( (SetSignal(0L, 0L) & SIGBREAKF_CTRL_C) && !xh.finish) {
+                while (fi && !(SetSignal(0L, 0L) & SIGBREAKF_CTRL_C) && !xh.finish) {
                     if (config->updateProgressFunc) {
                         config->progress = currentFileNumber / (totalFiles/100);
                         config->updateProgressFunc();
