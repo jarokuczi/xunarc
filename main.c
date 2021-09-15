@@ -83,9 +83,6 @@ short init(int shell) {
         return 0;
     }
 
-    if (!shell) {
-        GuiInit();
-    }
     XadInit(config);
     return 1;
 }
@@ -185,6 +182,7 @@ int main(int argc, char **argv) {
     if (argc || nogui) {
         XadProcess();
     } else {
+        GuiInit();
         GuiShow();
     }
     if (rda) FreeArgs(rda);
