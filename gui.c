@@ -36,11 +36,15 @@ char *const TASK_NAME = "extractTask";
 VOID handle_windows_events(struct Window *);
 VOID gadtoolsWindow(VOID);
 VOID extractArchiveTask(VOID);
+
+void updateProgress();
+
 struct Gadget *progressBar;
 struct Window    *mywin;
 
 int GuiInit() {
     config->progress = 0;
+    config->updateProgressFunc = updateProgress;
     return 1;
 }
 
@@ -162,11 +166,9 @@ VOID handle_windows_events(struct Window *mywin)
 }
 
 
+
 VOID extractArchiveTask(VOID) {
-    while (config->progress < 100) {
-        FPrintf(config->output, "Progress %ld\n", config->progress);
-        config->progress++;
-        GT_SetGadgetAttrs(progressBar, mywin, NULL, GTSL_Max, 100 - config->progress, TAG_END);
-        Delay(1);
-    }
+    XadProcess();
 }
+
+VOID updateProgress() { GT_SetGadgetAttrs(progressBar, mywin, NULL, GTSL_Max, 100 - config->progress, TAG_END); }

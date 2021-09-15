@@ -61,10 +61,11 @@ void openNewCon();
 const UBYTE VersionTag[] = "$VER: " PROGRAMNAME " " VERSIONSTRING " (" __DATE__ ")\n\0";
 
 short init(int shell) {
-    config = AllocMem(sizeof(struct Config), MEMF_ANY);
+    config = AllocMem(sizeof(struct Config), MEMF_ANY|MEMF_CLEAR);
     config->output = NULL;
     config->quiet = 1;
     if (shell) {
+        //openNewCon();
         config->output = Output();
         config->outputClosable = 0;
         config->quiet = 0;

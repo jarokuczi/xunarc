@@ -113,13 +113,17 @@ ULONG unpack() {
                 Flush(config->output);
                 fi = ai->xai_FileInfo;
 
-                while (fi && !(SetSignal(0L, 0L) & SIGBREAKF_CTRL_C) && !xh.finish) {
+                while (fi && !( (SetSignal(0L, 0L) & SIGBREAKF_CTRL_C) && !xh.finish) {
+                    if (config->updateProgressFunc) {
+                        config->progress = currentFileNumber / (totalFiles/100);
+                        config->updateProgressFunc();
+                    }
                     if (!config->quiet) {
                         FPrintf(config->output, "Processing file %s %ld of %ld\n",
                                 fi->xfi_FileName, currentFileNumber++, totalFiles);
                     }
                     Flush(config->output);
-                    if (!config->pattern || CheckName(config->pattern, fi->xfi_FileName)) {
+                    if (!config->pattern || CheckName(&config->pattern, fi->xfi_FileName)) {
                         CopyMem(config->dst, filename, strlen(config->dst) + 1);
                         if (strcmp(config->dst, "NIL:") && strcmp(config->dst, "nil:")) {
                             if (!config->noabs)
@@ -187,7 +191,6 @@ ULONG unpack() {
                                 LONG e;
 
                                 ++numfile;
-
                                 xh.extractmode = 1;
                                 e = xadFileUnArc(ai, XAD_OUTFILENAME, filename,
                                                  XAD_ENTRYNUMBER, fi->xfi_EntryNumber, XAD_MAKEDIRECTORY,

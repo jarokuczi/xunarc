@@ -22,6 +22,7 @@ struct Config {
     ULONG noabs;
     uint quiet;
     uint progress;
+    VOID (*updateProgressFunc)();
 };
 
 void Log(char * str);
