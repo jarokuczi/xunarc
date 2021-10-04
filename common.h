@@ -23,6 +23,9 @@ struct Config {
     uint quiet;
     uint progress;
     VOID (*updateProgressFunc)();
+    BOOL gui;
+    struct Window *win;
+    struct Gadget *pGadget;
 };
 
 void Log(char * str);

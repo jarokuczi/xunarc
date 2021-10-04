@@ -6,6 +6,8 @@
 #define XUNARC_XAD_H
 #include "common.h"
 struct Config * config;
+void XadSubProcess();
+void XadSubProcessFinishCallback();
 int XadInit(struct Config * cnf);
 int XadProcess();
 #endif //XUNARC_XAD_H

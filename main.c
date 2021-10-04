@@ -3,7 +3,7 @@
 #define REVISION        1
 #define VERSIONSTRING   "0.1"
 
-#define TEMPLATE "SRC/A,DST/A"
+#define TEMPLATE "SRC/A,DST/A,GUI/S"
 
 #include <exec/exec.h>
 #include <dos/dos.h>
@@ -121,11 +121,12 @@ short cleanUp() {
 
 
 int main(int argc, char **argv) {
-    uint nogui = 0;
+    BOOL gui = TRUE;
     char filename[512];
     LONG src,dst;
     LONG args[]={ (LONG)&src,
-                  (LONG)&dst};
+                  (LONG)&dst,
+                  (BOOL)&gui};
 
 
     struct RDArgs *rda=NULL;
@@ -139,6 +140,7 @@ int main(int argc, char **argv) {
 
     config->noabs = 0;
     config->pattern = "#?";
+    config->gui = 0;
     if (argc) {
         if (!(rda=ReadArgs(TEMPLATE, args, NULL)))
         {
@@ -147,8 +149,11 @@ int main(int argc, char **argv) {
         } else {
             config->src = (STRPTR)args[0];
             config->dst = (STRPTR)args[1];
+            config->gui = (BOOL)args[2];;
+            FPrintf(config->output, "Gui = %d\n",config->gui);
         }
     } else {
+        config->gui = 1;
         struct WBStartup *wbs=(struct WBStartup*)argv;
         struct WBArg *wba=&wbs->sm_ArgList[wbs->sm_NumArgs-1];
         BPTR oldcd;
@@ -164,7 +169,7 @@ int main(int argc, char **argv) {
                 openNewCon();
             }
             if ((FindToolType(dob->do_ToolTypes, "NOGUI"))) {
-                nogui = 1;
+                config->gui = 0;
                 openNewCon();
             }
             if (!(config->dst=FindToolType(dob->do_ToolTypes, "DST"))) {
@@ -179,9 +184,11 @@ int main(int argc, char **argv) {
         FPrintf(config->output, "SRC: %s\n",  (STRPTR)config->src);
         FPrintf(config->output, "DST: %s\n",  (STRPTR)config->dst);
     }
-    if (argc || nogui) {
+    if (argc || config->gui == 0) {
+        FPrintf(config->output, "NO GUI");
         XadProcess();
     } else {
+        FPrintf(config->output, "GUI");
         GuiInit();
         GuiShow();
     }

@@ -43,6 +43,7 @@ struct Gadget *progressBar;
 struct Window    *mywin;
 
 int GuiInit() {
+    config->gui = 1;
     config->progress = 0;
     config->updateProgressFunc = updateProgress;
     return 1;
@@ -93,7 +94,7 @@ VOID gadtoolsWindow(VOID)
             ng.ng_Flags      = 0;
             button = CreateGadget(BUTTON_KIND, progressBar, &ng, TAG_END);
 
-
+            config->pGadget = progressBar;
 
             if (button != NULL && progressBar != NULL)
             {
@@ -108,6 +109,7 @@ VOID gadtoolsWindow(VOID)
                                              WA_PubScreen,   mysc,
                                              TAG_END)) != NULL )
                 {
+                    config->win = mywin;
                     GT_RefreshWindow(mywin, NULL);
 
                     handle_windows_events(mywin);
@@ -147,7 +149,7 @@ VOID handle_windows_events(struct Window *mywin)
                     gad = (struct Gadget *)imsg->IAddress;
                     if (gad->GadgetID == START_BUTTON) {
                         FPrintf(config->output,"Button was pressed.\n");
-                        task = CreateTask(TASK_NAME, 0, extractArchiveTask, 16000);
+                        XadProcess();
                     }
                     break;
                 case IDCMP_CLOSEWINDOW:
@@ -171,4 +173,6 @@ VOID extractArchiveTask(VOID) {
     XadProcess();
 }
 
-VOID updateProgress() { GT_SetGadgetAttrs(progressBar, mywin, NULL, GTSL_Max, 100 - config->progress, TAG_END); }
+VOID updateProgress() {
+//    GT_SetGadgetAttrs(config->pGadget, config->win, NULL, GTSL_Max, 100 - config->progress, TAG_END);
+}

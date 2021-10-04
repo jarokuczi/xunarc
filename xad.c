@@ -6,6 +6,7 @@
 #include <proto/dos.h>
 #include <exec/memory.h>
 #include <dos/dosasl.h>
+#include <dos/dostags.h>
 #include <utility/hooks.h>
 
 #include <inline/dos.h>
@@ -15,6 +16,8 @@
 #include <clib/dos_protos.h>
 #include "xad.h"
 #include "common.h"
+
+#define SIG_HANDSHAKE 31337L
 
 struct xadMasterBase *xadMasterBase;
 struct DosLibrary *DOSBase;
@@ -30,8 +33,21 @@ int XadInit(struct Config *cnf) {
 }
 
 int XadProcess() {
-    ULONG ret = unpack();
-    return !ret ? 1 : 0;
+    struct Process *subProcess;
+    if (config->gui) {
+        subProcess = CreateNewProcTags(NP_Name, "xunarc extract process", NP_Entry, (APTR)XadSubProcess, NP_Output, config->output,
+                                       NP_ExitCode, (APTR)XadSubProcessFinishCallback, NP_CloseOutput, FALSE, NP_StackSize, 16000, TAG_END);
+        Delay(20);
+        subProcess->pr_Task.tc_UserData = config;
+        Signal(subProcess, SIG_HANDSHAKE);
+        if (!subProcess) {
+            FPrintf(config->output, "Can't create extract process\n");
+            return 0;
+        }
+    } else {
+        ULONG ret = unpack();
+        return !ret ? 1 : 0;
+    }
 }
 
 
@@ -114,8 +130,8 @@ ULONG unpack() {
                 fi = ai->xai_FileInfo;
 
                 while (fi && !(SetSignal(0L, 0L) & SIGBREAKF_CTRL_C) && !xh.finish) {
+                    config->progress = currentFileNumber / (totalFiles/100);
                     if (config->updateProgressFunc) {
-                        config->progress = currentFileNumber / (totalFiles/100);
                         config->updateProgressFunc();
                     }
                     if (!config->quiet) {
@@ -319,4 +335,15 @@ LONG CheckName(STRPTR *pat, STRPTR name) {
     return 0;
 }
 
+void XadSubProcess() {
+    DOSBase = (struct DosLibrary*) OpenLibrary(DOSNAME, 37);
+    xadMasterBase = (struct xadMasterBase *)OpenLibrary("xadmaster.library", 1);
+    struct Process *me;
+    me = FindTask(NULL);
+    Wait(SIG_HANDSHAKE);
+    config = me->pr_Task.tc_UserData;
+    unpack();
+}
+void XadSubProcessFinishCallback() {
 
+}
