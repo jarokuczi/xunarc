@@ -34,7 +34,8 @@ int XadInit(struct Config *cnf) {
 
 int XadProcess() {
     struct Process *subProcess;
-    if (config->gui) {
+    if (config->gui == TRUE) {
+        FPrintf(config->output, "XadProcess config->gui %d\n", config->gui);
         subProcess = CreateNewProcTags(NP_Name, "xunarc extract process", NP_Entry, (APTR)XadSubProcess, NP_Output, config->output,
                                        NP_ExitCode, (APTR)XadSubProcessFinishCallback, NP_CloseOutput, FALSE, NP_StackSize, 16000, TAG_END);
         Delay(20);

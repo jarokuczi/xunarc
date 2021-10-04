@@ -121,12 +121,11 @@ short cleanUp() {
 
 
 int main(int argc, char **argv) {
-    BOOL gui = TRUE;
     char filename[512];
-    LONG src,dst;
+    LONG src,dst,gui;
     LONG args[]={ (LONG)&src,
                   (LONG)&dst,
-                  (BOOL)&gui};
+                  (LONG)&gui};
 
 
     struct RDArgs *rda=NULL;
@@ -149,8 +148,8 @@ int main(int argc, char **argv) {
         } else {
             config->src = (STRPTR)args[0];
             config->dst = (STRPTR)args[1];
-            config->gui = (BOOL)args[2];;
-            FPrintf(config->output, "Gui = %d\n",config->gui);
+            config->gui = args[2] > 0 ? TRUE : FALSE;
+            FPrintf(config->output, "Gui = %d\n", args[2]);
         }
     } else {
         config->gui = 1;
@@ -184,13 +183,12 @@ int main(int argc, char **argv) {
         FPrintf(config->output, "SRC: %s\n",  (STRPTR)config->src);
         FPrintf(config->output, "DST: %s\n",  (STRPTR)config->dst);
     }
-    if (argc || config->gui == 0) {
-        FPrintf(config->output, "NO GUI");
-        XadProcess();
-    } else {
-        FPrintf(config->output, "GUI");
+    FPrintf(config->output, "config->gui %d is %d or %d\n", config->gui, TRUE, FALSE);
+    if (config->gui == TRUE) {
         GuiInit();
         GuiShow();
+    } else {
+        XadProcess();
     }
     if (rda) FreeArgs(rda);
     if (dob) FreeDiskObject(dob);
